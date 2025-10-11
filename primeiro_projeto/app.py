@@ -64,18 +64,41 @@ def validar_usuario(dados):
     if not email:
         return False, "Campo 'email' não \
         pode estar vazio", None
-
-    # Certeza -> Campo email existe e o 
+    
+    # Certeza -> Campo Email existe e o 
     # email existe
     email_existente = [user for user in usuarios if email == user['email']]
 
     # verificar se há algum usuario com esse email
     if len(email_existente) > 0:
-        return False, "Este email já está cadastrado" , None
+        return False, "Este email já \
+            está cadastrado", None
+    
+    #  ------------------------------------
+    if 'senha' not in dados:
+        return False, "Campo 'senha'\
+              é Obrigatorio", None
+    
+    # senha ja existe
+    senha = dados.get('senha', '').strip()
+
+    if not senha:
+        return False, "Campo 'senha' não pode \
+            estar vazio", None
+    
+    if len(senha) < 8 and len(senha) > 50:
+        return False, "Campo 'senha' com \
+            tamanho inválido", None 
+    
+    dados_validados = {
+        'nome': nome,
+        'email': email,
+        'senha': senha
+    }
+    return True, None, dados_validados
 
 
-
-
+     
 
 # Rota padrão - Index - Landpage
 @app.route('/')
