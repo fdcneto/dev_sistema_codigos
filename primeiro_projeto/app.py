@@ -69,6 +69,10 @@ def validar_usuario(dados):
     # email existe
     email_existente = [user for user in usuarios if email == user['email']]
 
+    # verificar se há algum usuario com esse email
+    if len(email_existente) > 0:
+        return False, "Este email já está cadastrado" , None
+
 
 
 
