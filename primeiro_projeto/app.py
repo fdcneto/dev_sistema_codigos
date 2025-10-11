@@ -1,133 +1,112 @@
-from flask import Flask, jsonify, request
-# importando a Class Flask do modulo flask
+from flask import Flask, request, jsonify
 
-# criar uma instancia do Flask = objeto
+# cria um objeto flask, que vai ser o app
 app = Flask(__name__)
-# __name__ é o nome do modulo atual -> navegação
 
-# Essa linha permite usar caracteres especiais
-# no JSON
-app.config['JSON_AS_ASCII'] = False
-# se esse de cima não pegar, use esse abaixo
-# app.json.ensure_ascii = False
-
+# JSON aceitar caracteres especiais
+app.config['JSON_AS_ASCII']=False
+# se der errado, descomente o debaixo
+# app.json.ensure.ascii = False
+# usuario(id, nome, email, senha)
 usuarios = [
-    {'id': 1, 'nome': 'David', 'email': 'davidvarao@senai.br'},
-    {'id': 2, 'nome': 'Geovanni', 'email': 'pizza35reais@senai.br'}
+    {'id': 1, 'nome': 'Raphamel', 
+     'email':'raphamengo@senai.br', 
+     'senha':'Flamengo2019'},
+    {'id': 2, 'nome': 'David', 
+     'email':'davidvarao@senai.br',
+     'senha':'Varao123'},
+    {'id': 3, 'nome': 'Geovanni',
+     'email':'geo@vanni.br', 
+     'senha':'PizzaioloTricolor'}
 ]
 
-# Definir Rotas (Endpoints)
-# quando acessar ao servidor, chame essa função
-@app.route('/')
-def home():
-    return 'Welcome to the mundo das APIs'
+# pq não estamos usando BD
+# Ideia de autoincrement
+proximo_id = 4
 
-# Sempre faça uma função/rota de verificação
-# do status da API
-@app.route('/status')
-def status():
-    return jsonify({
-        'status':'online',
-        'mensagem':'API funcionando corretamente'
-    })
-
-@app.route('/contato')
-def contato():
-    return '21 4002-8922\n ' \
-    'email: ta_dificil@dev_sistemas.senai.br'
-
-# Rota com GET -> Listar todos os usuarios
-@app.route('/usuarios', methods=['GET'])
-def listar_usuarios():
-    return jsonify(usuarios), 200
-
-@app.route('/usuario/<int:id>', methods=['GET'])
-def buscar_usuario(id):
-    # Poderia ser reescrito assim
-    # u = None
-    # for usuario in usuarios:
-    #     if usuario['id'] == id:
-    #         u = usuario
-
-    # compreensão de listas
-    u = [usuario for usuario in usuarios if usuario['id']==id]
-    
-    if u == []:
-        return jsonify({
-            'erro': "Dados inválidos"
-        }), 404
-    else:
-        return jsonify(u), 200
-
-# POST -> Ideia de Criação
-@app.route('/usuarios', methods=['POST'])
-def criar_usuario():
-    # pegar dados do frontend/requisição
-    dados = request.get_json()
-
-    # verificar se há algo no JSON
+def validar_usuario(dados):
+    # validar dados vindo das requisições
+    # 3 retornos: 
+    # 1 -> se são validos (True)/False
+    # 2 -> Qual foi o erro
+    # 3 -> Dados Validados
+    # Existem dados no JSON?
     if not dados:
-        return jsonify({
-            'erro':'Não há Dados'
-        }), 400
-    
-    # Pegar um campo do JSON
+        return False, "Corpo da requisição \
+        não pode ser vazio", None
+
+    # se existe o campo nome no JSON
+    if 'nome' not in dados:
+        return False, \
+        "Campo 'nome' é obrigatorio", None
+    # ja que o campo existe, iremos pegar o 
+    # valor associado a ele
     nome = dados.get('nome', '').strip()
 
-    # Isso não ve se esta vazio, 
-    # verifica se existe
+    # tenho o nome, o que eu quero validar?
     if not nome:
-        return jsonify({
-            'erro':'Não há nome'
-        }), 400
-    
-    # Verificar se tem algo escrito
-    if len(nome) < 1:
-        return jsonify({
-            'erro':'Nome Inválido'
-        }), 400
+        return False, \
+    "Campo 'nome' não pode estar vazio", None
 
-    # lower -> tudo em minuscula
-    email = dados.get('email', '').strip().lower()
+    # tamanho minimo do nome
+    if len(nome) < 3:
+        return False, "Campo 'nome' deve ter \
+            no minimo 3 caracteres", None
+
+    # ------------------------------------
+    # Se existe o campo EMAIL no JSON
+    if 'email' not in dados:
+        return False, \
+    "Campo 'email' é obrigatório", None
+
+    email = dados.get('email', '').strip()
 
     if not email:
-        return jsonify({
-            'erro':'Não há email'
-        }), 400
+        return False, "Campo 'email' não \
+        pode estar vazio", None
+
+    # Certeza -> Campo email existe e o 
+    # email existe
     
-    email_existente = [usuario for usuario in usuarios 
-            if usuario['email'] == email]
-    
-    if email_existente == []:
-        id = len(usuarios) + 1
-        novo_usuario = {
-            'id':id,
-            'nome': nome,
-            'email':email
-        }
-        usuarios.append(novo_usuario)
-        return jsonify({
-            'status':201,
-            'mensagem': 'Novo usuário criado'
-        })
-    else:
-        return jsonify({
-            'status':400,
-            'mensagem': 'Email já existente'
-        })
 
 
-# Rota com parâmetro numérico
-@app.route('/produto/<int:id>')
-def produto(id):
-    return f'Você escolheu o produto com id:{id}'
 
-# flask ele converte string em um resposta HTTP
 
-# executar o servidor
+# Rota padrão - Index - Landpage
+@app.route('/')
+def home():
+    return jsonify({
+        'msg':"Bem vindo ao Geovanni's Pizza"})
+
+# Rota GET - Listar Usuario
+app.route('/usuarios', methods=['GET'])
+def listar_usuarios():
+    # recuperar os usuarios (sem senha)
+    usuarios_sem_senha = []
+
+    for usuario in usuarios:
+        user = usuario.copy()
+        user.pop('senha', None)
+        usuarios_sem_senha.append(user)
+
+    return jsonify({
+        'dados': usuarios_sem_senha,
+        'total': len(usuarios)
+    }), 200
+
+# POST -> Criar Usuarios
+@app.route('/usuarios', methods=['POST'])
+def criar_usuario():
+
+    global proximo_id
+
+    valido, erro, dados_validados = \
+    validar_usuario(request.get_json())
+
+
+
+
+
+# iniciar o servidor -> porta padrão 5000
 if __name__ == '__main__':
     app.run(debug=True)
-# debug -> servidor no modo de desenvolvimento
-# ativa o reload automatico e mostra
-# os erros de forma detalhada
-# TESTE
