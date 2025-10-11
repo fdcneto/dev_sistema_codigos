@@ -59,7 +59,7 @@ def validar_usuario(dados):
         return False, \
     "Campo 'email' é obrigatório", None
 
-    email = dados.get('email', '').strip()
+    email = dados.get('email', '').strip().lower()
 
     if not email:
         return False, "Campo 'email' não \
@@ -67,7 +67,8 @@ def validar_usuario(dados):
 
     # Certeza -> Campo email existe e o 
     # email existe
-    
+    email_existente = [user for user in usuarios if email == user['email']]
+
 
 
 
